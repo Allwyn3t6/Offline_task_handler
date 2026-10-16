@@ -1,0 +1,9 @@
+{
+  "name": "HoD Task Handler - BME",
+  "short_name": "HoD Tasks",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f6fb",
+  "theme_color": "#1f4e8c",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

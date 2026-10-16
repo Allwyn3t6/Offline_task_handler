@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HoD Task Handler</title>
+  <meta name="theme-color" content="#1f4e8c">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">HoD Task Handler <small>BME · KPRIET</small></div>
+    <div class="status"><span id="net" class="pill">…</span><span id="who"></span>
+      <button id="signout" class="ghost hidden">Sign out</button></div>
+  </header>
+
+  <section id="login" class="card center hidden">
+    <h2>Sign in</h2>
+    <p>Use <b>hod_bme@kpriet.ac.in</b>. Sign in once per device while online; afterwards the app works offline.</p>
+    <button id="signin">Sign in with Google</button>
+    <p id="loginErr" class="err"></p>
+  </section>
+
+  <main id="app" class="hidden">
+    <nav>
+      <button data-tab="new" class="active">New entry</button>
+      <button data-tab="review">Review <span id="reviewCount" class="badge">0</span></button>
+      <button data-tab="sent">Assigned</button>
+      <button data-tab="admin">Admin</button>
+    </nav>
+
+    <!-- NEW ENTRY -->
+    <section id="tab-new" class="tab card">
+      <form id="taskForm">
+        <label>Category
+          <select name="type" required>
+            <option>Things to do</option>
+            <option>New idea</option>
+            <option>Assignment</option>
+            <option>Delegation of duty</option>
+            <option>Other role</option>
+          </select>
+        </label>
+        <label>Title <input name="title" required placeholder="e.g. Prepare NBA file — @RK"></label>
+        <label>Details <textarea name="details" rows="4" placeholder="Type @INITIALS to auto-assign, e.g. @RK @SM"></textarea></label>
+        <div class="row">
+          <label>Date <input type="date" name="dueDate"></label>
+          <label>Time <input type="time" name="dueTime"></label>
+          <label>Priority
+            <select name="priority"><option>Normal</option><option>High</option><option>Urgent</option><option>Low</option></select>
+          </label>
+        </div>
+        <fieldset><legend>Assign to (auto-selected from @initials)</legend>
+          <div id="facultyPicker" class="chips"></div>
+        </fieldset>
+        <div class="row end"><button type="reset" class="ghost">Clear</button><button type="submit">Save for review</button></div>
+      </form>
+    </section>
+
+    <!-- REVIEW -->
+    <section id="tab-review" class="tab hidden">
+      <div id="reviewList"></div>
+    </section>
+
+    <!-- SENT -->
+    <section id="tab-sent" class="tab hidden">
+      <div class="row"><input id="search" placeholder="Search…"><select id="filterFaculty"><option value="">All faculty</option></select></div>
+      <div id="sentList"></div>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="tab-admin" class="tab hidden">
+      <div class="card">
+        <h3>Faculty</h3>
+        <form id="facultyForm" class="row wrap">
+          <input type="hidden" name="id">
+          <input name="name" required placeholder="Full name">
+          <input name="initials" required placeholder="Initials (e.g. RK)" maxlength="6">
+          <input name="phone" required placeholder="Phone (+91…)" inputmode="tel">
+          <input name="email" required type="email" placeholder="Email">
+          <button type="submit">Save</button>
+        </form>
+        <table><thead><tr><th>Initials</th><th>Name</th><th>Phone</th><th>Email</th><th></th></tr></thead>
+          <tbody id="facultyTable"></tbody></table>
+      </div>
+      <div class="card">
+        <h3>Automation</h3>
+        <p>On approval the app sends the task automatically by email (and SMS-free WhatsApp link) through your Google Apps Script. See README for the 5-minute setup.</p>
+        <label>Apps Script Web App URL <input id="scriptUrl" placeholder="https://script.google.com/macros/s/…/exec"></label>
+        <label>Shared secret <input id="scriptSecret" placeholder="same value as SECRET in Code.gs"></label>
+        <label class="inline"><input type="checkbox" id="openWhatsapp"> Also open WhatsApp with the message after approving</label>
+        <div class="row end"><button id="saveSettings">Save settings</button></div>
+      </div>
+      <div class="card">
+        <h3>Backup</h3>
+        <div class="row"><button id="exportBtn" class="ghost">Export JSON</button></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="hidden"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
