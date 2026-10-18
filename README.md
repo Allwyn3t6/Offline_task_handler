@@ -1,47 +1,70 @@
 # HoD Task Handler — BME, KPRIET
 
-An offline-first web app (PWA) for the HoD to record **things to do, new ideas, assignments, delegation of duty and other roles**, assign them to faculty, review them, and send them on approval.
+Record **things to do, new ideas, assignments, delegation of duty, events, reminders and other roles**.
+Everything goes into **one Google Sheet**, which is the main cloud storage.
 
-- **Works offline**: entries are saved on the device at once and sync to the cloud when the device is back online.
-- **Same data on every device** (PC, two laptops, phone): sign in with `hod_bme@kpriet.ac.in` on each one. No other account can sign in.
-- **Auto-assign**: type `@RK` (or the initials in capitals, e.g. `RK`) in the title or details and that faculty member is selected.
-- **Review → Approve → Send**: new entries wait in **Review**. When you press *Approve & send*, the task is emailed to the faculty member with a calendar invite for the date and time. If you are offline it goes out as soon as you are back online.
-- **WhatsApp / Email buttons** for each faculty member on every assigned task. You can also have WhatsApp open on its own after you approve.
-- **Admin page**: faculty name, initials, phone and email. It also has the automation settings and a JSON backup.
-- Can be installed as an app: use "Install app" in Chrome/Edge, or "Add to Home Screen" on the phone.
+```
+ Android app ─┐                           ┌─► Google Calendar  (events, faculty invited)
+              ├─► Apps Script ─► Google ──┼─► Email            (to the assigned faculty)
+ Desktop app ─┘   (web API)      Sheet    ├─► WhatsApp         (Cloud API, or one-tap from the apps)
+ (Python)                                  └─► Reminders        (pop up on desktop + phone + Calendar)
+```
 
-## One-time setup (≈15 minutes)
+* **Works offline.** Both apps save everything on the device. When the device is online they upload to the Sheet and pull changes made on the other devices.
+* **Auto-assign.** Type `@RK` (or `RK` in capitals) and that faculty member is ticked.
+* **Actions per entry.** Tick any of these:
+  * **Add to Google Calendar**: creates an event on the date and time and invites the faculty.
+  * **Send email**: emails the full details to each assigned faculty member.
+  * **Send WhatsApp**: sent automatically if WhatsApp Cloud API is set up. Otherwise the app opens WhatsApp with the message typed and you tap Send.
+  * **Remind me**: a reminder pops up on the desktop and on the phone at the "remind at" time. A Google Calendar popup is also added as a backup.
+* **Review first.** Use *Save for review*, check the entry in the **Review** tab, then press *Approve & send*. Use *Save & approve* to send at once. Actions run once, when the entry is approved.
+* **Faculty (Admin)** tab: name, initials, phone and email. You can edit them from the phone or the laptop.
+* You can also type or edit rows directly in the Sheet. Set `status` to `approved` and the actions run within 5 minutes.
 
-### 1. Firebase (sync + login, free plan)
-1. Go to <https://console.firebase.google.com> and click **Add project**.
-2. **Build → Authentication → Get started → Google → Enable**.
-3. **Build → Firestore Database → Create database** (production mode). Open the **Rules** tab, paste the contents of `firestore.rules` and click **Publish**.
-4. **Project settings → Your apps → Web (`</>`)**: register the app and copy the `firebaseConfig` into `firebase-config.js`.
-5. **Authentication → Settings → Authorized domains**: add the domain where you host the app (e.g. `yourname.github.io`).
+## 1. Google Sheet + Apps Script (once, about 10 min)
 
-### 2. Host it (free)
-Choose one:
-- **GitHub Pages**: repo **Settings → Pages → Deploy from branch**, then pick this branch and `/ (root)`.
-- **Firebase Hosting**: `npm i -g firebase-tools && firebase init hosting && firebase deploy`.
+1. Signed in as **hod_bme@kpriet.ac.in**, create a new Google Sheet (for example *HoD Tasks*).
+2. In the Sheet: **Extensions → Apps Script**. Delete the sample code and paste [`apps-script/Code.gs`](apps-script/Code.gs).
+   Under **Project Settings**, tick *Show "appsscript.json"* and paste [`apps-script/appsscript.json`](apps-script/appsscript.json).
+3. Choose the function **`setup`** and click **Run**, then allow the permissions.
+   Open **Execution log** and copy the **TOKEN** it prints. This is your app password.
+4. **Deploy → New deployment → Web app**, with *Execute as: Me* and *Who has access: Anyone*. Copy the **Web app URL** (ends in `/exec`).
+   *Anyone* only means the URL is reachable. Every request still needs your TOKEN.
+5. After you change the code later, use **Deploy → Manage deployments → Edit → New version** so the URL stays the same.
 
-Open the URL on each device and sign in once while online.
+## 2. Android app
 
-### 3. Automatic email (Google Apps Script, free)
-1. While signed in as `hod_bme@kpriet.ac.in`, open <https://script.google.com> and create a **New project**.
-2. Paste in `apps-script/Code.gs`, then change `SECRET` to a long random text.
-3. **Deploy → New deployment → Web app**, with *Execute as: Me* and *Who has access: Anyone*. Authorize it and copy the URL.
-4. In the app go to **Admin → Automation**, paste the URL and the secret, then click **Save settings**.
+* Download the APK: GitHub → **Actions → Build Android APK** → latest run → **HodTasks-apk**. Unzip it and install `app-debug.apk` on the phone (allow "install unknown apps").
+* Open **Settings** in the app, paste the URL and TOKEN, then tap *Save & sync*.
+* Allow notifications. On Android 12+ also tap **Allow exact reminder alarms**.
+* The phone syncs when you open the app, after every change, and about every 15 min in the background. Reminders ring even if the app is closed.
 
-Emails are sent from your own Gmail and calendar invites from your own calendar. Approved items show a status: *Sending when online → Notified ✓*.
+## 3. Desktop app (PC and both laptops)
 
-## Local mode
-If `firebase-config.js` has no `apiKey`, the app runs on one device only and keeps its data in that browser. This is handy for trying it out.
+* Install Python 3 from python.org. On Windows, tick *Add to PATH*; tkinter is included.
+* Copy the `desktop/` folder and run `python hod_tasks.py`. On Windows you can double-click `run_windows.bat`.
+* Open **Settings**, paste the URL and TOKEN, then click *Save & sync*.
+* Keep it running (it can be minimised) so reminders can pop up. To start it with Windows, press `Win+R`, type `shell:startup`, and put a shortcut to `run_windows.bat` there.
+* Optional: `pip install plyer` adds native Windows notifications as well as the pop-up window.
+* Data is kept in `~/.hod_tasks/data.db`.
 
-## Files
-| File | Purpose |
-|---|---|
-| `index.html`, `styles.css`, `app.js` | The app |
-| `sw.js`, `manifest.json`, `icon.svg` | Offline support / install |
-| `firebase-config.js` | Your Firebase keys + allowed email |
-| `firestore.rules` | Security: only the HoD account can read or write |
-| `apps-script/Code.gs` | Email + calendar automation |
+## 4. Optional: fully automatic WhatsApp
+
+Without this step, WhatsApp is one tap from the apps. To send automatically:
+
+1. Set up the WhatsApp Cloud API at <https://developers.facebook.com> (WhatsApp → Getting started) with a business phone number.
+2. Create a message template, e.g. `task_assigned`, with the body
+   `Dear {{1}}, you have been assigned: {{2}}. Due: {{3}}. Details: {{4}} — HoD, BME`, and wait for approval.
+3. In Apps Script → **Project Settings → Script properties**, add `WA_TOKEN`, `WA_PHONE_ID`, `WA_TEMPLATE` (and `WA_LANG` if it isn't `en`).
+
+## Sheet columns
+
+**Faculty**: `id, name, initials, phone, email, deleted, updated, synced`
+**Entries**: `id, created, updated, synced, device, type, title, details, faculty (initials, comma separated), date (YYYY-MM-DD), time (HH:MM), priority, actions (calendar,email,whatsapp,reminder), remindAt (YYYY-MM-DDTHH:MM), status (review/approved/done/cancelled), processed, log, deleted`
+
+The `log` column shows what was done, e.g. `calendar: event created | email: sent to RK`.
+
+## Development
+
+`tests/` runs `Code.gs` in a mock Apps Script server and syncs two desktop stores through it:
+`node tests/mock_apps_script.js apps-script/Code.gs & python tests/test_sync.py`
