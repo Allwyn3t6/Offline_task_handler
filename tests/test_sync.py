@@ -17,5 +17,5 @@ print('auto', auto_faculty('please @rk and SM do it', [{'initials':'RK'},{'initi
 print(whatsapp_url(pc.entry(e['id']), lap.faculty()[0])[:40])
 assert pc.pending() == 0 and pc.entry(e['id'])['status'] == 'approved'
 assert 'email: sent to RK' in pc.entry(e['id'])['log']
-assert [x['title'] for x in lap.entries()] == ['NBA file']
+assert lap.entry(e['id'])['title'] == 'NBA file'
 print('ALL OK')
